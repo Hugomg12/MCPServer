@@ -1,0 +1,24 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Env files
+.env
+.env.*
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Docker volumes (if bind-mounted later)
+n8n_data/
+pg_data/
