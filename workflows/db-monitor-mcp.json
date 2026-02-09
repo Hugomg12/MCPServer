@@ -1,0 +1,240 @@
+{
+  "name": "DB Monitor",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "223c0998-9979-4be2-82a4-b273e9290e57",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "list_tables",
+          "mode": "list",
+          "cachedResultName": "list_tables"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "schema": "public"
+          },
+          "matchingColumns": [
+            "schema"
+          ],
+          "schema": [
+            {
+              "id": "schema",
+              "displayName": "schema",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "49ad5779-03b1-433c-93ed-8f1034377548",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dependiendo de tu versión, el output del MCP node puede venir en distintas formas.\n// Este código intenta detectar lo típico: array directo o dentro de alguna propiedad.\n\nconst data = $json;\n\n// Caso 1: el nodo devuelve directamente un array [\"t1\",\"t2\",...]\nconst tables = Array.isArray(data) ? data\n  // Caso 2: viene como { result: [...] } o { data: [...] } o { content: [...] }\n  : (data.result ?? data.data ?? data.content ?? []);\n\nreturn [{\n  tables,\n  count: Array.isArray(tables) ? tables.length : 0\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "68aca9fc-69d9-49e3-9aae-0997b5e51bd8",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ef5104a6-606e-4412-9816-f31a17f9616c",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "751b089f-1beb-4f70-9da4-1248eb720977",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f282c4c5-e5b1-4db0-b7a1-dfcf039a83e6",
+              "name": "severity",
+              "value": "high",
+              "type": "string"
+            },
+            {
+              "id": "14102ccd-a072-4b86-ad17-a33e58f8fbef",
+              "name": "message",
+              "value": "Too many tables detected",
+              "type": "string"
+            },
+            {
+              "id": "812b616e-2851-4cf2-af8e-f8c43ff6a1ec",
+              "name": "count",
+              "value": "={{ $json.count }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "50dcee5c-f432-47e3-be9a-4fb31503ab22",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b2cb03de-2953-4ce8-bad2-2544ae810329",
+              "name": "severity",
+              "value": "info",
+              "type": "string"
+            },
+            {
+              "id": "94b9238c-3fa8-4b2e-a096-ea79b12d8f1f",
+              "name": "message",
+              "value": "Tables count ok",
+              "type": "string"
+            },
+            {
+              "id": "7cebaed5-d3bb-493b-ba9c-7f9be8074746",
+              "name": "count",
+              "value": "={{ $json.count }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        96
+      ],
+      "id": "6ac55b41-8163-431b-9195-ff083b992246",
+      "name": "Edit Fields1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "MCP Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "24b126c2-b006-41a2-8f74-63022a3f5e8c",
+  "meta": {
+    "instanceId": "d24725c62d27f6935d94110b3043cac3d1cf1418962da2ae7eafef144de67ff9"
+  },
+  "id": "Tm5p3YAky_xGx-v7e7g8q",
+  "tags": []
+}
