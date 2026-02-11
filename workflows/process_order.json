@@ -1,0 +1,327 @@
+{
+  "name": "process_order",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "39e9ee7c-5c52-46cf-9814-680cb7148c6a",
+      "name": "Receive Order",
+      "webhookId": "162912db-26e8-4ff8-a658-31d4db140fe0"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "get_stock",
+          "mode": "list",
+          "cachedResultName": "get_stock"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $node[\"Receive Order\"].json[\"body\"][\"sku\"]}}"
+          },
+          "matchingColumns": [
+            "sku"
+          ],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e79f0260-9932-4676-a87a-b34710c7d358",
+      "name": "Get Product Stock"
+    },
+    {
+      "parameters": {
+        "jsCode": "const t = $json.content?.[0]?.text ?? {};\n\n// qty viene del webhook (ajusta la ruta si tu webhook lo guarda en body)\nconst qty = Number($node[\"Receive Order\"].json.body.qty);\n\nreturn [{\n  ok: t.ok,\n  sku: t.sku,\n  name: t.name,\n  quantity: Number(t.quantity),\n  qty,\n  updated_at: t.updated_at,\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "1ae96a7d-2bb6-4e39-8599-85f2f4c39218",
+      "name": "Normalize Stock Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ec689687-d8f2-4870-8a48-81fd5abdca23",
+              "leftValue": "={{ Number($json.quantity) }}",
+              "rightValue": "={{ Number($json.qty) }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        576,
+        0
+      ],
+      "id": "b4a2241a-8db7-4786-9f39-719f35d25a3f",
+      "name": "Check Stock Availability"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "reserve_stock",
+          "mode": "list",
+          "cachedResultName": "reserve_stock"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $json.sku }}",
+            "qty": "={{ $json.qty }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "qty",
+              "displayName": "qty",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        784,
+        -96
+      ],
+      "id": "876f471b-0ac1-41a8-9697-da5a777837b6",
+      "name": "Reserve Stock"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "38679594-b37b-448d-b0ef-972f1c934077",
+              "name": "ok",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "7110743d-c354-4eae-a7ff-62e8044336e6",
+              "name": "error",
+              "value": "INSUFFICIENT STOCK",
+              "type": "string"
+            },
+            {
+              "id": "c7a70d25-4e8b-4232-858d-79bad25455d6",
+              "name": "sku",
+              "value": "={{ $json.sku }}",
+              "type": "string"
+            },
+            {
+              "id": "80a39164-f8e4-4628-a5a7-5d7a296e580e",
+              "name": "available",
+              "value": "={{ $json.quantity }}",
+              "type": "number"
+            },
+            {
+              "id": "08ac90ad-aa1e-4612-bdeb-c73845763b5b",
+              "name": "requested",
+              "value": "={{ $json.qty }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        96
+      ],
+      "id": "feea68bd-d4ed-4215-b161-ddc947db2ae3",
+      "name": "Out-of-Stock Respone"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1008,
+        -96
+      ],
+      "id": "45ffb931-c07c-45a7-9092-53c9488d58b7",
+      "name": "Order Accepted"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1008,
+        96
+      ],
+      "id": "5449d5a3-7ff9-4313-a0e9-d915b6edc859",
+      "name": "Insufficient Stock"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Order": {
+      "main": [
+        [
+          {
+            "node": "Get Product Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Product Stock": {
+      "main": [
+        [
+          {
+            "node": "Normalize Stock Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Stock Response": {
+      "main": [
+        [
+          {
+            "node": "Check Stock Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stock Availability": {
+      "main": [
+        [
+          {
+            "node": "Reserve Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Out-of-Stock Respone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserve Stock": {
+      "main": [
+        [
+          {
+            "node": "Order Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Out-of-Stock Respone": {
+      "main": [
+        [
+          {
+            "node": "Insufficient Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a5ae6720-eb1c-472e-8dc8-ba8a21f5d4b5",
+  "meta": {
+    "instanceId": "d24725c62d27f6935d94110b3043cac3d1cf1418962da2ae7eafef144de67ff9"
+  },
+  "id": "mmoN2dD8DM96Yf9ubgmy1",
+  "tags": []
+}

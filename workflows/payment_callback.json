@@ -1,0 +1,368 @@
+{
+  "name": "payment_callback",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fb2462a8-8c08-4b49-99a4-53050b69497a",
+      "name": "Payment",
+      "webhookId": "d96b3e07-3f57-498e-ade1-febbf1695dd4"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const order_id = item.json?.body?.order_id;\n  const paidRaw = item.json?.body?.paid;\n\n  // Acepta true/false boolean o \"true\"/\"false\" string\n  const paid =\n    paidRaw === true || paidRaw === 'true' ? true :\n    paidRaw === false || paidRaw === 'false' ? false :\n    null;\n\n  return {\n    json: { order_id, paid }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "dc926413-7800-442b-9697-9966426e0b15",
+      "name": "Normalize Payment Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "180c6cbe-f0da-4957-a19c-211eea36547f",
+              "leftValue": "={{ $json.paid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "1c3c4479-5ad2-4683-bc09-e511d3ac14cd",
+      "name": "paid?"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "mark_paid",
+          "mode": "list",
+          "cachedResultName": "mark_paid"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $json.order_id }}"
+          },
+          "matchingColumns": [
+            "order_id"
+          ],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -96
+      ],
+      "id": "99b32be7-d130-4aec-86ae-0c846052f9b9",
+      "name": "Mark Paid",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const order_id = item.json?.body?.order_id;\n  const paidRaw = item.json?.body?.paid;\n\n  // Acepta true/false boolean o \"true\"/\"false\" string\n  const paid =\n    paidRaw === true || paidRaw === 'true' ? true :\n    paidRaw === false || paidRaw === 'false' ? false :\n    null;\n\n  return {\n    json: { order_id, paid }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        -96
+      ],
+      "id": "d5bb12ee-81af-432c-94ee-09a882ab20f0",
+      "name": "Mark Paid Result"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "=http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "mark_failed",
+          "mode": "list",
+          "cachedResultName": "mark_failed"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $json.order_id }}"
+          },
+          "matchingColumns": [
+            "order_id"
+          ],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        624,
+        96
+      ],
+      "id": "8aa25825-aa57-49a7-bce3-f83d8e9726cc",
+      "name": "Mark Failed",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "release_stock",
+          "mode": "list",
+          "cachedResultName": "release_stock"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $json.order_id }}"
+          },
+          "matchingColumns": [
+            "order_id"
+          ],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        832,
+        96
+      ],
+      "id": "0d0ef3f4-c264-40d9-8e4f-7263104b747b",
+      "name": "Release Stock",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const order_id = item.json?.body?.order_id;\n  const paidRaw = item.json?.body?.paid;\n\n  // Acepta true/false boolean o \"true\"/\"false\" string\n  const paid =\n    paidRaw === true || paidRaw === 'true' ? true :\n    paidRaw === false || paidRaw === 'false' ? false :\n    null;\n\n  return {\n    json: { order_id, paid }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        96
+      ],
+      "id": "d9e23648-0825-436e-80c3-64c7e36e1060",
+      "name": "Normalize Failed Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"ok\": true,\n  \"order_id\": \"={{$json.order_id}}\",\n  \"status\": \"FAILED\"\n}\n",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1232,
+        96
+      ],
+      "id": "3d3a1278-8b60-4dd0-8b8d-e7638a79e371",
+      "name": "Payment failed"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"ok\": true,\n  \"order_id\": \"={{$json.order_id}}\",\n  \"status\": \"={{$json.status || 'PAID'}}\"\n}\n",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1056,
+        -96
+      ],
+      "id": "c819a432-5a84-41c0-b549-0ffa9c3c9347",
+      "name": "Payment Processed"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Payment": {
+      "main": [
+        [
+          {
+            "node": "Normalize Payment Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Payment Input": {
+      "main": [
+        [
+          {
+            "node": "paid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "paid?": {
+      "main": [
+        [
+          {
+            "node": "Mark Paid",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Paid": {
+      "main": [
+        [
+          {
+            "node": "Mark Paid Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Paid Result": {
+      "main": [
+        [
+          {
+            "node": "Payment Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Failed": {
+      "main": [
+        [
+          {
+            "node": "Release Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Stock": {
+      "main": [
+        [
+          {
+            "node": "Normalize Failed Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Failed Result": {
+      "main": [
+        [
+          {
+            "node": "Payment failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f2c425a9-0c38-436b-ac0a-81adb5307ffe",
+  "meta": {
+    "instanceId": "d24725c62d27f6935d94110b3043cac3d1cf1418962da2ae7eafef144de67ff9"
+  },
+  "id": "94UnBUYV44bYq0SrUsHsq",
+  "tags": []
+}

@@ -1,0 +1,368 @@
+{
+  "name": "order_reserve",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "oder",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        -16
+      ],
+      "id": "dc2baecd-93e1-49af-8cf3-627229600014",
+      "name": "Webhook",
+      "webhookId": "d7b0cd7e-5e5a-4951-91c8-10656dd82585"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"ok\": false,\n  \"order_id\": \"={{$json.order_id || null}}\",\n  \"error\": \"={{$json.error || 'CREATE_ORDER_FAILED'}}\",\n  \"details\": \"={{$json.details || $json}}\"\n}\n",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        768,
+        80
+      ],
+      "id": "9f7a9098-ae49-476c-a788-ba2bbb7ef8b4",
+      "name": "Create Order Failed"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"ok\": false,\n  \"order_id\": \"={{$json.order_id || null}}\",\n  \"error\": \"={{$json.error || 'RESERVATION_FAILED'}}\",\n  \"details\": \"={{$json.details || $json}}\"\n}\n",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1392,
+        -16
+      ],
+      "id": "ed312335-9a1e-4e9a-a1f9-31540493fb9d",
+      "name": "Reservation failed"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"ok\": true,\n  \"order_id\": \"={{$json.order_id}}\",\n  \"status\": \"={{$json.status}}\",\n  \"reservation\": \"={{$json.reservation}}\"\n}\n",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1392,
+        -208
+      ],
+      "id": "e801406c-cf98-4351-9e51-b1de992e769b",
+      "name": "Order Reserved"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3f181b00-df31-4e42-9ba0-fc5abe8311f5",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1184,
+        -112
+      ],
+      "id": "77db69aa-ed4f-4025-a37f-6e44bab05737",
+      "name": "Reservation OK?"
+    },
+    {
+      "parameters": {
+        "jsCode": "function extractMcpPayload(itemJson) {\n  const t = itemJson?.content?.[0]?.text;\n\n  // Caso A: ya es objeto (tu caso)\n  if (t && typeof t === 'object') return t;\n\n  // Caso B: viene como string JSON\n  if (typeof t === 'string') {\n    try { return JSON.parse(t); }\n    catch (e) { return { ok: false, error: 'MCP_RETURNED_NON_JSON', details: t }; }\n  }\n\n  // Caso C: el nodo falló y n8n mete error en otro sitio\n  if (itemJson?.error) return { ok: false, error: 'MCP_NODE_ERROR', details: itemJson.error };\n\n  // Caso D: fallback\n  return itemJson;\n}\n\nreturn items.map(item => {\n  const payload = extractMcpPayload(item.json);\n\n  // devolvemos SOLO el payload plano\n  return { json: payload };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        -112
+      ],
+      "id": "f94f408c-721b-4931-b200-f05ca5678236",
+      "name": "Normalize Reserve Result"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "reserve_for_order",
+          "mode": "list",
+          "cachedResultName": "reserve_for_order"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $json.order_id }}"
+          },
+          "matchingColumns": [
+            "order_id"
+          ],
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        768,
+        -112
+      ],
+      "id": "71e07d77-ba0f-49ad-ae4b-0efd9056013b",
+      "name": "Reserve For Order",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5c976074-4171-40c3-bfdd-b35698284cff",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        -16
+      ],
+      "id": "7314b84e-42dd-46f5-8354-20688ebffd2f",
+      "name": "Order Created?"
+    },
+    {
+      "parameters": {
+        "jsCode": "function extractMcpPayload(itemJson) {\n  const t = itemJson?.content?.[0]?.text;\n\n  // Caso A: ya es objeto (tu caso)\n  if (t && typeof t === 'object') return t;\n\n  // Caso B: viene como string JSON\n  if (typeof t === 'string') {\n    try { return JSON.parse(t); }\n    catch (e) { return { ok: false, error: 'MCP_RETURNED_NON_JSON', details: t }; }\n  }\n\n  // Caso C: el nodo falló y n8n mete error en otro sitio\n  if (itemJson?.error) return { ok: false, error: 'MCP_NODE_ERROR', details: itemJson.error };\n\n  // Caso D: fallback\n  return itemJson;\n}\n\nreturn items.map(item => {\n  const payload = extractMcpPayload(item.json);\n\n  // devolvemos SOLO el payload plano\n  return { json: payload };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -16
+      ],
+      "id": "7d2f7b9d-07ce-48f9-a4dc-7e1aa1811117",
+      "name": "Normalize Create Order Result"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "tool": {
+          "__rl": true,
+          "value": "create_order",
+          "mode": "list",
+          "cachedResultName": "create_order"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $json.body.sku }}",
+            "qty": "={{ $json.body.qty }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "qty",
+              "displayName": "qty",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -16
+      ],
+      "id": "9222a50a-330b-4f4e-b480-2cd01e6a61c3",
+      "name": "Create Order",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservation OK?": {
+      "main": [
+        [
+          {
+            "node": "Order Reserved",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reservation failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Reserve Result": {
+      "main": [
+        [
+          {
+            "node": "Reservation OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserve For Order": {
+      "main": [
+        [
+          {
+            "node": "Normalize Reserve Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Created?": {
+      "main": [
+        [
+          {
+            "node": "Reserve For Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Order Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Create Order Result": {
+      "main": [
+        [
+          {
+            "node": "Order Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order": {
+      "main": [
+        [
+          {
+            "node": "Normalize Create Order Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "67084c8c-926a-41b5-bba7-10f0393cc077",
+  "meta": {
+    "instanceId": "d24725c62d27f6935d94110b3043cac3d1cf1418962da2ae7eafef144de67ff9"
+  },
+  "id": "VLngQ9vaEls7YhdbxWDpg",
+  "tags": []
+}
