@@ -1,4 +1,8 @@
 from fastmcp import FastMCP
 
-# Create MCP server instance
+from app.auth_middleware import ApiKeyBearerAuthMiddleware
+from app.config import MCP_API_KEY
+
 mcp = FastMCP("agent-lab-mcp-backend")
+
+mcp.add_middleware(ApiKeyBearerAuthMiddleware(api_key=MCP_API_KEY))
