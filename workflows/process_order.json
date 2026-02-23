@@ -11,16 +11,17 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -784,
+        96
       ],
-      "id": "39e9ee7c-5c52-46cf-9814-680cb7148c6a",
+      "id": "07083736-6202-48e5-81da-c3382d0510e1",
       "name": "Receive Order",
       "webhookId": "162912db-26e8-4ff8-a658-31d4db140fe0"
     },
     {
       "parameters": {
         "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "authentication": "bearerAuth",
         "tool": {
           "__rl": true,
           "value": "get_stock",
@@ -54,11 +55,17 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        208,
-        0
+        -576,
+        96
       ],
-      "id": "e79f0260-9932-4676-a87a-b34710c7d358",
-      "name": "Get Product Stock"
+      "id": "5780ed8a-c347-40e9-8333-b0b045a32afd",
+      "name": "Get Product Stock",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LBTagOM1ByNaqkkF",
+          "name": "mcp-backend-bearer"
+        }
+      }
     },
     {
       "parameters": {
@@ -67,10 +74,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        384,
-        0
+        -400,
+        96
       ],
-      "id": "1ae96a7d-2bb6-4e39-8599-85f2f4c39218",
+      "id": "8e904165-9d78-469c-840b-b00a159e704a",
       "name": "Normalize Stock Response"
     },
     {
@@ -101,15 +108,16 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        576,
-        0
+        -208,
+        96
       ],
-      "id": "b4a2241a-8db7-4786-9f39-719f35d25a3f",
+      "id": "8c0d849a-3289-49ac-ad4a-4f775ad5f674",
       "name": "Check Stock Availability"
     },
     {
       "parameters": {
         "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "authentication": "bearerAuth",
         "tool": {
           "__rl": true,
           "value": "reserve_stock",
@@ -151,11 +159,17 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        784,
-        -96
+        0,
+        0
       ],
-      "id": "876f471b-0ac1-41a8-9697-da5a777837b6",
-      "name": "Reserve Stock"
+      "id": "17f197dc-f3a7-4114-a0a4-4e2e25126fd7",
+      "name": "Reserve Stock",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LBTagOM1ByNaqkkF",
+          "name": "mcp-backend-bearer"
+        }
+      }
     },
     {
       "parameters": {
@@ -198,10 +212,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        784,
-        96
+        0,
+        192
       ],
-      "id": "feea68bd-d4ed-4215-b161-ddc947db2ae3",
+      "id": "091c63f7-69ce-4b0d-99ba-75b9d7745230",
       "name": "Out-of-Stock Respone"
     },
     {
@@ -213,10 +227,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1008,
-        -96
+        224,
+        0
       ],
-      "id": "45ffb931-c07c-45a7-9092-53c9488d58b7",
+      "id": "c4ac253d-f1f1-470b-9e70-8195e302e55c",
       "name": "Order Accepted"
     },
     {
@@ -229,10 +243,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1008,
-        96
+        224,
+        192
       ],
-      "id": "5449d5a3-7ff9-4313-a0e9-d915b6edc859",
+      "id": "c4f00404-c2be-490b-a6e7-cf7dc58c3169",
       "name": "Insufficient Stock"
     }
   ],
@@ -318,10 +332,11 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "a5ae6720-eb1c-472e-8dc8-ba8a21f5d4b5",
+  "versionId": "58c41f61-5bde-402d-afa0-d2abdcc37722",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "d24725c62d27f6935d94110b3043cac3d1cf1418962da2ae7eafef144de67ff9"
   },
-  "id": "mmoN2dD8DM96Yf9ubgmy1",
+  "id": "DqEECUJ7V5oR0AHVXhFZ-",
   "tags": []
 }

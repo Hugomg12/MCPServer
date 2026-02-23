@@ -11,10 +11,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -640,
+        96
       ],
-      "id": "fb2462a8-8c08-4b49-99a4-53050b69497a",
+      "id": "fdcce91a-a174-4cfc-801c-e639deb34de4",
       "name": "Payment",
       "webhookId": "d96b3e07-3f57-498e-ade1-febbf1695dd4"
     },
@@ -25,10 +25,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        0
+        -432,
+        96
       ],
-      "id": "dc926413-7800-442b-9697-9966426e0b15",
+      "id": "5b2d8471-9e1d-4447-81c6-4b464affb9e1",
       "name": "Normalize Payment Input"
     },
     {
@@ -59,15 +59,16 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        416,
-        0
+        -224,
+        96
       ],
-      "id": "1c3c4479-5ad2-4683-bc09-e511d3ac14cd",
+      "id": "93c9bf4d-3357-4298-9820-75238a4a5713",
       "name": "paid?"
     },
     {
       "parameters": {
         "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "authentication": "bearerAuth",
         "tool": {
           "__rl": true,
           "value": "mark_paid",
@@ -101,11 +102,17 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        640,
-        -96
+        0,
+        0
       ],
-      "id": "99b32be7-d130-4aec-86ae-0c846052f9b9",
+      "id": "16428838-2889-49bb-9458-457c336eab5c",
       "name": "Mark Paid",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LBTagOM1ByNaqkkF",
+          "name": "mcp-backend-bearer"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -115,15 +122,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        848,
-        -96
+        208,
+        0
       ],
-      "id": "d5bb12ee-81af-432c-94ee-09a882ab20f0",
+      "id": "af9483f7-cb1c-4888-87f8-e3f986b91c82",
       "name": "Mark Paid Result"
     },
     {
       "parameters": {
         "endpointUrl": "=http://host.docker.internal:8000/mcp",
+        "authentication": "bearerAuth",
         "tool": {
           "__rl": true,
           "value": "mark_failed",
@@ -157,16 +165,23 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        624,
-        96
+        -16,
+        192
       ],
-      "id": "8aa25825-aa57-49a7-bce3-f83d8e9726cc",
+      "id": "b07af376-f9ca-495b-bf18-0680fc917bde",
       "name": "Mark Failed",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LBTagOM1ByNaqkkF",
+          "name": "mcp-backend-bearer"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "authentication": "bearerAuth",
         "tool": {
           "__rl": true,
           "value": "release_stock",
@@ -200,11 +215,17 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        832,
-        96
+        192,
+        192
       ],
-      "id": "0d0ef3f4-c264-40d9-8e4f-7263104b747b",
+      "id": "0bf26d51-4623-437d-89f2-748081f3c9a8",
       "name": "Release Stock",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LBTagOM1ByNaqkkF",
+          "name": "mcp-backend-bearer"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -214,16 +235,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1024,
-        96
+        384,
+        192
       ],
-      "id": "d9e23648-0825-436e-80c3-64c7e36e1060",
+      "id": "67a2038e-ce52-41a7-9a1d-23eee1204677",
       "name": "Normalize Failed Result"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"ok\": true,\n  \"order_id\": \"={{$json.order_id}}\",\n  \"status\": \"FAILED\"\n}\n",
+        "responseBody": "={\"ok\":true,\"status\":\"FAILED\"}",
         "options": {
           "responseCode": 200
         }
@@ -231,16 +252,16 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1232,
-        96
+        592,
+        192
       ],
-      "id": "3d3a1278-8b60-4dd0-8b8d-e7638a79e371",
+      "id": "8b3ed31d-ceac-4650-b572-11795c4fdd0d",
       "name": "Payment failed"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"ok\": true,\n  \"order_id\": \"={{$json.order_id}}\",\n  \"status\": \"={{$json.status || 'PAID'}}\"\n}\n",
+        "responseBody": "={\"ok\":true,\"status\":\"PAID\"}",
         "options": {
           "responseCode": 200
         }
@@ -248,10 +269,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1056,
-        -96
+        416,
+        0
       ],
-      "id": "c819a432-5a84-41c0-b549-0ffa9c3c9347",
+      "id": "56340fd8-2e80-4e0d-b86a-d622eee82032",
       "name": "Payment Processed"
     }
   ],
@@ -359,10 +380,11 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "f2c425a9-0c38-436b-ac0a-81adb5307ffe",
+  "versionId": "68b916c2-b652-46c6-9697-5dc2f0b6b028",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "d24725c62d27f6935d94110b3043cac3d1cf1418962da2ae7eafef144de67ff9"
   },
-  "id": "94UnBUYV44bYq0SrUsHsq",
+  "id": "swA3y2au6HFIzT-GiPX11",
   "tags": []
 }

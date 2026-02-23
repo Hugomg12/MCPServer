@@ -11,17 +11,17 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -48,
-        -16
+        -1440,
+        192
       ],
-      "id": "dc2baecd-93e1-49af-8cf3-627229600014",
+      "id": "376fe55c-9082-4e78-a1dc-6b90f55cd244",
       "name": "Webhook",
       "webhookId": "d7b0cd7e-5e5a-4951-91c8-10656dd82585"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"ok\": false,\n  \"order_id\": \"={{$json.order_id || null}}\",\n  \"error\": \"={{$json.error || 'CREATE_ORDER_FAILED'}}\",\n  \"details\": \"={{$json.details || $json}}\"\n}\n",
+        "responseBody": "={\"ok\":false,\"order_id\":null,\"error\":\"MCP_RETURNED_NON_JSON\",\"details\":\"Error calling tool 'create_order': qty must be > 0\"}",
         "options": {
           "responseCode": 409
         }
@@ -29,16 +29,16 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        768,
-        80
+        -624,
+        288
       ],
-      "id": "9f7a9098-ae49-476c-a788-ba2bbb7ef8b4",
+      "id": "17285899-3c9c-4f32-af4d-72971a386104",
       "name": "Create Order Failed"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"ok\": false,\n  \"order_id\": \"={{$json.order_id || null}}\",\n  \"error\": \"={{$json.error || 'RESERVATION_FAILED'}}\",\n  \"details\": \"={{$json.details || $json}}\"\n}\n",
+        "responseBody": "={\"ok\":false,\"order_id\":null,\"error\":\"INSUFFICIENT_STOCK\",\"details\":{\"ok\":false,\"error\":\"INSUFFICIENT_STOCK\",\"current_qty\":98,\"requested_qty\":99999}}",
         "options": {
           "responseCode": 409
         }
@@ -46,16 +46,16 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1392,
-        -16
+        0,
+        192
       ],
-      "id": "ed312335-9a1e-4e9a-a1f9-31540493fb9d",
+      "id": "d9575eaa-c631-47ea-a3c2-727ea6153304",
       "name": "Reservation failed"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"ok\": true,\n  \"order_id\": \"={{$json.order_id}}\",\n  \"status\": \"={{$json.status}}\",\n  \"reservation\": \"={{$json.reservation}}\"\n}\n",
+        "responseBody": "{\"ok\":true,\"order_id\":\"83457b6f-df5c-43f6-ad26-0bd6ccf6adfa\",\"status\":\"RESERVED\",\"message\":\"Order successfully reserved\"}",
         "options": {
           "responseCode": 200
         }
@@ -63,10 +63,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1392,
-        -208
+        0,
+        0
       ],
-      "id": "e801406c-cf98-4351-9e51-b1de992e769b",
+      "id": "92bddfdd-8b52-4942-80b1-bc3dd402e501",
       "name": "Order Reserved"
     },
     {
@@ -97,10 +97,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1184,
-        -112
+        -208,
+        96
       ],
-      "id": "77db69aa-ed4f-4025-a37f-6e44bab05737",
+      "id": "a580bb6d-8c84-42eb-af5f-120544359059",
       "name": "Reservation OK?"
     },
     {
@@ -110,15 +110,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        976,
-        -112
+        -416,
+        96
       ],
-      "id": "f94f408c-721b-4931-b200-f05ca5678236",
+      "id": "f7052f1e-1bfe-48b1-a3c1-22546a5e3238",
       "name": "Normalize Reserve Result"
     },
     {
       "parameters": {
         "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "authentication": "bearerAuth",
         "tool": {
           "__rl": true,
           "value": "reserve_for_order",
@@ -152,11 +153,17 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        768,
-        -112
+        -624,
+        96
       ],
-      "id": "71e07d77-ba0f-49ad-ae4b-0efd9056013b",
+      "id": "8344aa51-0bf0-4e2a-bd55-55ca3331ea4a",
       "name": "Reserve For Order",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LBTagOM1ByNaqkkF",
+          "name": "mcp-backend-bearer"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -187,10 +194,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        560,
-        -16
+        -832,
+        192
       ],
-      "id": "7314b84e-42dd-46f5-8354-20688ebffd2f",
+      "id": "89f06159-5e75-4d71-8535-ff56fb8c8975",
       "name": "Order Created?"
     },
     {
@@ -200,15 +207,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        352,
-        -16
+        -1040,
+        192
       ],
-      "id": "7d2f7b9d-07ce-48f9-a4dc-7e1aa1811117",
+      "id": "975afd35-8251-4936-a11d-efd4d333fbda",
       "name": "Normalize Create Order Result"
     },
     {
       "parameters": {
         "endpointUrl": "http://host.docker.internal:8000/mcp",
+        "authentication": "bearerAuth",
         "tool": {
           "__rl": true,
           "value": "create_order",
@@ -250,12 +258,18 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1,
       "position": [
-        144,
-        -16
+        -1248,
+        192
       ],
-      "id": "9222a50a-330b-4f4e-b480-2cd01e6a61c3",
+      "id": "d2dc9c97-44e9-40a5-b145-22727eeb84a1",
       "name": "Create Order",
       "retryOnFail": false,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "LBTagOM1ByNaqkkF",
+          "name": "mcp-backend-bearer"
+        }
+      },
       "onError": "continueRegularOutput"
     }
   ],
@@ -359,10 +373,11 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "67084c8c-926a-41b5-bba7-10f0393cc077",
+  "versionId": "b626dcaa-cdff-4156-a66d-a6661f6d4b0c",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "d24725c62d27f6935d94110b3043cac3d1cf1418962da2ae7eafef144de67ff9"
   },
-  "id": "VLngQ9vaEls7YhdbxWDpg",
+  "id": "YRmKsGzy13rP-DF-A-w2Z",
   "tags": []
 }
