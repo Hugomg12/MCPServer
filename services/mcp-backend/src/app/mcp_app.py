@@ -1,8 +1,5 @@
 from fastmcp import FastMCP
 
-from app.auth_middleware import ApiKeyBearerAuthMiddleware
-from app.config import MCP_API_KEY
-
+# Auth se gestiona a nivel HTTP (Starlette middleware en main.py)
+# con whitelist de red interna Docker.
 mcp = FastMCP("agent-lab-mcp-backend")
-
-mcp.add_middleware(ApiKeyBearerAuthMiddleware(api_key=MCP_API_KEY))

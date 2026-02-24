@@ -44,6 +44,24 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
 
+  mcp-backend:
+    build:
+      context: ./services/mcp-backend
+      dockerfile: Dockerfile
+    container_name: agentlab_mcp-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      MCP_API_KEY: ${MCP_API_KEY}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
 volumes:
   pg_data:
   n8n_data:
