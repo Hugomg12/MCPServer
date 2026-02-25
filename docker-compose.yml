@@ -1,4 +1,22 @@
+# =============================================================================
+# Docker Compose configuration for the Agent Lab project.
+#
+# This file defines four services that work together:
+#   1. postgres     – the shared PostgreSQL database
+#   2. n8n          – a workflow automation platform (uses the same database)
+#   3. mcp-backend  – the MCP tool server (products, stock, orders, etc.)
+#   4. agent-api    – the LLM-powered chat API that calls MCP tools
+#
+# All services are connected to the default Docker network so they can
+# communicate with each other by service name.
+# =============================================================================
+
 services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL database – the central data store for all services.
+  # Stores products, stock, orders, and n8n internal data.
+  # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16
     container_name: agentlab_postgres
@@ -7,43 +25,54 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"
+      - "5433:5432"                            # Expose on host port 5433 to avoid conflicts with a local Postgres
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data        # Persist database files across container restarts
     healthcheck:
+      # Checks if Postgres is ready to accept connections
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # ---------------------------------------------------------------------------
+  # n8n – open-source workflow automation tool.
+  # Connects to the same Postgres instance for its own internal storage.
+  # ---------------------------------------------------------------------------
   n8n:
     image: n8nio/n8n:latest
     container_name: agentlab_n8n
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_healthy              # Wait until Postgres passes its health check
     ports:
       - "5678:5678"
     environment:
+      # Tell n8n to use Postgres instead of its default SQLite
       DB_TYPE: postgresdb
-      DB_POSTGRESDB_HOST: postgres
-      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_HOST: postgres              # Docker service name, resolved via internal DNS
+      DB_POSTGRESDB_PORT: 5432                  # Internal container port (not the host-mapped 5433)
       DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
       DB_POSTGRESDB_USER: ${POSTGRES_USER}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
 
+      # Basic HTTP authentication for the n8n web UI
       N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE}
       N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER}
       N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
 
-      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}  # Key used to encrypt stored credentials
 
-      N8N_DIAGNOSTICS_ENABLED: "false"
-      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"           # Disable anonymous telemetry
+      N8N_PERSONALIZATION_ENABLED: "false"        # Skip the initial personalization survey
 
     volumes:
-      - n8n_data:/home/node/.n8n
+      - n8n_data:/home/node/.n8n                 # Persist n8n settings and workflow data
 
+  # ---------------------------------------------------------------------------
+  # MCP Backend – the Model Context Protocol tool server.
+  # Exposes tools for products, stock, orders, and database admin.
+  # ---------------------------------------------------------------------------
   mcp-backend:
     build:
       context: ./services/mcp-backend
@@ -51,23 +80,28 @@ services:
     container_name: agentlab_mcp-backend
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_healthy              # Needs the database to be ready before starting
     ports:
       - "8000:8000"
     healthcheck:
+      # A lightweight TCP check to verify the server is listening on port 8000
       test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 15s                         # Give the app time to start before checking
     environment:
       MCP_API_KEY: ${MCP_API_KEY}
-      DB_HOST: postgres
+      DB_HOST: postgres                         # Connects to Postgres via the Docker service name
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
 
+  # ---------------------------------------------------------------------------
+  # Agent API – the LLM-powered chat service.
+  # Receives user messages, calls MCP tools via the backend, and returns answers.
+  # ---------------------------------------------------------------------------
   agent-api:
     build:
       context: ./services/agent-api
@@ -75,14 +109,16 @@ services:
     container_name: agentlab_agent_api
     depends_on:
       mcp-backend:
-        condition: service_healthy
+        condition: service_healthy              # Waits for mcp-backend to pass its health check
     ports:
       - "9000:9000"
     environment:
       GROQ_API_KEY: ${GROQ_API_KEY}
-      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
-      MCP_URL: http://mcp-backend:8000/mcp
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}   # Falls back to a default model
+      MCP_URL: http://mcp-backend:8000/mcp                  # Internal Docker URL for the MCP backend
       MCP_API_KEY: ${MCP_API_KEY}
+
+# Named volumes for persistent data storage
 volumes:
-  pg_data:
-  n8n_data:
+  pg_data:      # PostgreSQL data files
+  n8n_data:     # n8n configuration and workflow data
