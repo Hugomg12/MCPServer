@@ -54,6 +54,12 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       MCP_API_KEY: ${MCP_API_KEY}
       DB_HOST: postgres
@@ -62,6 +68,21 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
 
+  agent-api:
+    build:
+      context: ./services/agent-api
+      dockerfile: Dockerfile
+    container_name: agentlab_agent_api
+    depends_on:
+      mcp-backend:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      MCP_URL: http://mcp-backend:8000/mcp
+      MCP_API_KEY: ${MCP_API_KEY}
 volumes:
   pg_data:
   n8n_data:

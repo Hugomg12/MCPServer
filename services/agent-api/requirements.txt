@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+openai
+fastmcp
+httpx
