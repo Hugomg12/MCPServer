@@ -1,149 +1,111 @@
-# MCPServer
+# 🤖 AgentLab — MCP Backend + AI Agent
 
-## Overview
-
-MCPServer is a minimal but realistic backend system designed for agent-based platforms. It demonstrates how enterprise systems expose business capabilities through **Model Context Protocol (MCP)** tools, orchestrate workflows with **n8n**, and interact with a **PostgreSQL** database using transactional logic.
-
-The goal of this project is to simulate a production-style architecture where:
-
-- Business logic is exposed as secure MCP tools.
-- Workflows are orchestrated externally (n8n).
-- A future AI agent can call tools via structured tool-calling.
-- Database access is safe, transactional, and concurrency-aware.
-
-This project runs on Windows with Docker Desktop.
-
----
-
-## Architecture
-
-The system consists of:
-
-- **mcp-backend (Python)**
-  Exposes business tools using FastMCP.
-  Handles authentication, transactions, and database access.
-
-- **PostgreSQL (Docker)**
-  Stores products, stock, orders, and reservations.
-
-- **n8n (Docker)**
-  Orchestrates workflows that call MCP tools.
-
-### Key Features
-
-- API key authentication (fail-closed) using Bearer token
-- Transaction-safe stock reservation with row-level locking
-- Order lifecycle management (PENDING → RESERVED → PAID / FAILED / CANCELLED)
-- Read-only query tool with SELECT enforcement
-- Modular backend structure
-
----
-
-## Project Structure
+A professional backend system that simulates real enterprise agent infrastructure. Natural language in, business actions out.
 
 ```
-services/
-  mcp-backend/
-    src/
-      app/
-      tools/
-      main.py
-
-docker-compose.yml
-.env.example
-workflows/
+User: "Create an order for 5 units of SKU-001"
+  └─► Agent API → LLM decides tools → MCP Backend → PostgreSQL
+        └─► "Order created and stock reserved successfully."
 ```
+
+### What's inside
+
+- **MCP Backend** — Exposes business tools (products, stock, orders) via Model Context Protocol
+- **Agent API** — Receives natural language, uses an LLM to call the right tools automatically
+- **n8n** — Orchestrates workflows (order processing, payment callbacks)
+- **PostgreSQL** — Persistent storage with transactions and row-level locking
+- **Bearer Auth** — All MCP tool calls require a valid API key
 
 ---
 
-## Environment Configuration
+## 🚀 Getting started
 
-Create a `.env` file in the root of the repository based on `.env.example`.
+### Prerequisites
 
-Example:
+- Docker Desktop running
+- A `.env` file in the root (copy from `.env.example` and fill in the values)
 
-```env
-# PostgreSQL
-POSTGRES_USER=n8n
-POSTGRES_PASSWORD=your_password
-POSTGRES_DB=n8n
-
-# MCP Backend Auth
-MCP_API_KEY=your_secure_key
+```bash
+cp .env.example .env
+# Edit .env with your values
 ```
 
----
-
-## Running the Project (Full Docker Setup)
-
-From the root of the repository:
-
-### 1. Build and start all services
+### Start everything
 
 ```bash
 docker compose up -d --build
 ```
 
-This starts:
+| Service     | URL                       |
+| ----------- | ------------------------- |
+| n8n         | http://localhost:5678     |
+| MCP Backend | http://localhost:8000/mcp |
+| Agent API   | http://localhost:9000     |
 
-- PostgreSQL
-- n8n ([http://localhost:5678](http://localhost:5678))
-- MCP backend ([http://localhost:8000/mcp](http://localhost:8000/mcp))
+### First time setup — create the database schema
 
-### 2. Stop the project
+```bash
+# Windows (PowerShell)
+Get-Content db/schema.sql | docker exec -i agentlab_postgres psql -U n8n -d n8n
+
+# Mac / Linux
+docker exec -i agentlab_postgres psql -U n8n -d n8n < db/schema.sql
+```
+
+### Stop everything
 
 ```bash
 docker compose down
 ```
 
+> ⚠️ Never use `docker compose down -v` — it deletes all data including the database.
+
 ---
 
-## Running MCP Backend Locally (Optional)
-
-If you prefer running the backend outside Docker:
+## 🧪 Test the agent
 
 ```bash
-cd services/mcp-backend
-.venv\Scripts\activate
-python src/main.py
+POST http://localhost:9000/chat
+Content-Type: application/json
+
+{ "message": "Create a product SKU-001 with 50 units of stock" }
+{ "message": "How much stock does SKU-001 have?" }
+{ "message": "Create an order for 3 units of SKU-001 and reserve the stock" }
 ```
 
-MCP endpoint:
+Check the `trace` field in the response to see every tool call the agent made.
+
+---
+
+## 📁 Project structure
 
 ```
-http://localhost:8000/mcp
+MCPServer/
+├── services/
+│   ├── mcp-backend/        # MCP server (FastMCP + asyncpg)
+│   │   └── src/
+│   │       ├── app/        # Config, DB pool, MCP app
+│   │       └── tools/      # Business tools (products, stock, orders)
+│   └── agent-api/          # AI agent (FastAPI + Groq/Llama)
+│       └── src/
+├── workflows/              # n8n workflow exports (JSON)
+├── db/
+│   └── schema.sql          # Database schema
+├── docker-compose.yml
+└── .env.example
 ```
 
 ---
 
-## Authentication
+## 🔧 Environment variables
 
-All MCP calls require:
+Copy `.env.example` to `.env` and fill in:
 
-```
-Authorization: Bearer <MCP_API_KEY>
-```
-
-If the header is missing or invalid, the request is rejected.
-
----
-
-## Example Workflow
-
-1. A webhook in n8n receives `{ sku, qty }`.
-2. n8n calls `create_order` via MCP.
-3. n8n calls `reserve_for_order`.
-4. A payment callback updates order state (`mark_paid` or `mark_failed`).
-
----
-
-## Purpose
-
-This project serves as a foundation for:
-
-- Tool-calling AI agents
-- Multi-agent orchestration experiments
-- Backend architecture demonstrations
-- Interview or portfolio projects simulating real-world systems
-
-It is intentionally small but structured in a production-oriented way.
+| Variable             | Description                             |
+| -------------------- | --------------------------------------- |
+| `POSTGRES_DB`        | Database name                           |
+| `POSTGRES_USER`      | Database user                           |
+| `POSTGRES_PASSWORD`  | Database password                       |
+| `MCP_API_KEY`        | Bearer token for MCP authentication     |
+| `GROQ_API_KEY`       | Groq API key (free at console.groq.com) |
+| `N8N_ENCRYPTION_KEY` | Random string for n8n encryption        |
